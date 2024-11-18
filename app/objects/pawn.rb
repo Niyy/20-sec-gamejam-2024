@@ -144,7 +144,7 @@ class Pawn < DR_Object
             child = _path_found 
 
             while(@path_parents[child.uid].uid != child.uid)
-                puts "adding #{child}"
+                puts "writing path -> adding #{child}"
                 @path_cur << child 
                 child = @path_parents[child.uid]
             end

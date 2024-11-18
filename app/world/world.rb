@@ -54,7 +54,7 @@ class World
                     @tiles[[x, y]][obj.type] = {} 
                 end
 
-                puts "adding #{[x, y]}"
+                puts "world -> adding #{[x, y]}"
                 @tiles[[x, y]][obj.type][obj.uid] = obj
             end
         end
@@ -65,8 +65,8 @@ class World
 
 
     def delete(obj)
-        w_count = (obj.w / @dim).ceil()
-        h_count = (obj.h / @dim).ceil()
+        w_count = (obj.w / @dim).ceil() + 1
+        h_count = (obj.h / @dim).ceil() + 1
         
         puts "delete count #{[w_count, h_count]}"
         

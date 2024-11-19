@@ -50,6 +50,8 @@ class World
                 x = obj.x + cur_w
                 y = obj.y + cur_h
 
+                next if(!@tiles.has_key?([x,y]))
+
                 if(@tiles.has_key?([x, y]) && !@tiles[[x, y]].has_key?(obj.type))
                     @tiles[[x, y]][obj.type] = {} 
                 end
@@ -74,6 +76,8 @@ class World
             h_count.each() do |cur_h|
                 x = obj.x + cur_w
                 y = obj.y + cur_h
+                
+                next if(!@tiles.has_key?([x,y]))
 
                 puts "deleting #{[x, y]}"
 

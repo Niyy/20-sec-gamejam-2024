@@ -6,7 +6,7 @@ class Game < View
         self.args = args
         puts 'hello my good sir.'
         @screen_offset = [0, 0]
-        @world = World.new(args, @screen_offset, w: 10, h: 10, dim: 80)
+        @world = World.new(args, @screen_offset, w: 10, h: 10, dim: 32)
         @cursor_pos = [0, 0]
 
         pawn = Pawn.new(

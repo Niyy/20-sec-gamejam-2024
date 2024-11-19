@@ -40,6 +40,7 @@ class Ordered_Tree
        
         if(!where)
             @branches << branch 
+            @named_lookup[branch.uid] = @branches.length - 1 
         else
             @branches.insert(where, branch)
             @named_lookup[branch.uid] = where

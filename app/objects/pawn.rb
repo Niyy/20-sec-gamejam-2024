@@ -8,6 +8,7 @@ class Pawn < DR_Object
         
         @task = nil
         @speed = 60
+        @perc = 2.0
         @faction = argv.faction
 
         # Pathing
@@ -17,7 +18,7 @@ class Pawn < DR_Object
 
     def update(tick_count, world)
         create_path(world.tiles)
-        move(tick_count, world)
+        move_lerp(tick_count, world)
     end
 
 
@@ -44,6 +45,7 @@ class Pawn < DR_Object
             sqr(trail_end.y - next_step.y) 
         
         if(
+            tiles.has_key?([next_step.x, next_step.y]) &&
             !parents.has_key?(next_step.uid) && 
             (
                 assess(tiles, next_step, cur, dif)# || 
@@ -157,17 +159,6 @@ class Pawn < DR_Object
 
     def move(tick_count, world)
         if(@next_step && @next_step && tick_count % @speed == 0)
-#            dir = [
-#                @next_step.x - @x,
-#                @next_step.y - @y
-#            ]
-#
-#            dir.x = (dir.x / dir.x.abs()) if(dir.x != 0)
-#            dir.y = (dir.y / dir.y.abs()) if(dir.y != 0)
-#            
-#            @x += dir.x
-#            @y += dir.y
-            
             @last_x = @x
             @last_y = @y
             @x = @next_step.x
@@ -176,8 +167,24 @@ class Pawn < DR_Object
             @next_step = @path_cur.pop()
             world.update(self, {x: @last_x, y: @last_y})
         end
+    end
 
-        return if(@path_cur.empty?() || @path_end.nil?() || @next_step != [@x, @y])
+
+    def move_lerp(tick_count, world)
+        if(@next_step && @last_x && @last_y && @perc <= 1.0)
+            @x = @last_x + ((@next_step.x - @last_x) * @perc)
+            @y = @last_y + ((@next_step.y - @last_y) * @perc)
+            world.update(self, {x: @last_x, y: @last_y})
+            @perc += 0.005
+        end
+        
+        if(@perc >= 1.0)
+            @last_x = @x
+            @last_y = @y
+            @next_step = @path_cur.pop()
+            @perc = 0
+            world.update(self, {x: @last_x, y: @last_y})
+        end
     end
 
 

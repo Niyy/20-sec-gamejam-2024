@@ -6,12 +6,12 @@ class Game < View
         self.args = args
         puts 'hello my good sir.'
         @screen_offset = [0, 0]
-        @world = World.new(args, @screen_offset, w: 10, h: 10, dim: 32)
+        @world = World.new(args, @screen_offset, w: 40, h: 40, dim: 8)
         @cursor_pos = [0, 0]
 
         pawn = Pawn.new(
-            w: @world.width, 
-            h: @world.height, 
+            w: 32, 
+            h: 32, 
             path: 'sprites/isometric/yellow.png',
             static: false
         )
@@ -43,7 +43,7 @@ class Game < View
         end
 
 
-        if(inputs.mouse.button_left && @world.valid_add(@cursor_pos) && @world.tile_filled?(@cursor_pos, :structure, 0))
+        if(inputs.mouse.button_left && @world.valid_add(@cursor_pos) && @world.collid?)
             @world.add(Structure.new(
                 x: @cursor_pos.x, 
                 y: @cursor_pos.y, 

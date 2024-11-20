@@ -77,10 +77,11 @@ class World
                 x = obj.x + cur_w
                 y = obj.y + cur_h
                 
-                next if(!@tiles.has_key?([x,y]))
+                next if(!@tiles.has_key?([x,y]) || 
+                        !@tiles[[x,y]].has_key?(obj.type))
 
                 puts "deleting #{[x, y]}"
-
+                
                 @tiles[[x, y]][obj.type].delete(obj.uid)
             end
         end
@@ -155,13 +156,6 @@ class World
         }
 
         return _out
-    end
-
-
-    def tile_filled?(position, type, passing_qty)
-        return true if(!(@tiles[position] && @tiles[position][type]))
-
-        return @tiles[position][type].values.length <= passing_qty
     end
 
 

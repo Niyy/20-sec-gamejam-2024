@@ -179,6 +179,13 @@ class Pawn < DR_Object
         end
         
         if(@perc >= 1.0)
+            if(@next_step)
+                puts "next step #{@next_step}"
+
+                @x = @next_step.x
+                @y = @next_step.y
+            end
+
             @last_x = @x
             @last_y = @y
             @next_step = @path_cur.pop()

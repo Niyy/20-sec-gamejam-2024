@@ -167,30 +167,40 @@ class Pawn < DR_Object
 
 
     def move_lerp(tick_count, world)
-        if(@next_step && @last_x && @last_y && @perc <= 1.0)
-            @x = @last_x + ((@next_step.x - @last_x) * @perc)
-            @y = @last_y + ((@next_step.y - @last_y) * @perc)
+        next_state = {}
+
+        return if(!(@next_step && @last_x && @last_y))
+
+        next_state = {
+            x: @last_x + ((@next_step.x - @last_x) * @perc),
+            y: @last_y + ((@next_step.y - @last_y) * @perc),
+            w: @w,
+            h: @h,
+            type: @type,
+            uid: @uid
+        }
+
+        return if(world.check_collision(next_state, @col_list))
+
+        if(@perc <= 1.0)
             @perc += 0.005
-            new_col_list = world.update(self, {x: @last_x, y: @last_y})
+            new_col_list = world.update(next_state, {x: @last_x, y: @last_y})
             @col_list = new_col_list if(new_col_list)
         end
 
-
-        
         if(@perc >= 1.0)
             if(@next_step)
-                @x = @next_step.x
-                @y = @next_step.y
+                next_state.x = @next_step.x
+                next_state.y = @next_step.y
             end
 
             @last_x = @x
             @last_y = @y
             @next_step = @path_cur.pop()
             @perc = 0
-            added_col_tiles = world.update(
+            @col = world.update(
                 self, 
-                {x: @last_x, y: @last_y}, 
-                @col_list
+                {x: @last_x, y: @last_y},
             )
         end
     end
@@ -235,12 +245,12 @@ class Pawn < DR_Object
 
 
     def will_collide?(tiles)
-        has_collided? = false
+        has_collided = false
 
         @col_list.each() do |tile|
             continue if(!tiles.has_key?(tile))
 
-            has_collided? = true if(tiles[tile].keys.length > 0)
+            has_collided = true if(tiles[tile].keys.length > 0)
         end
 
         return has_collided?

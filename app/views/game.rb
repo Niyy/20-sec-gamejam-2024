@@ -15,7 +15,21 @@ class Game < View
             path: 'sprites/isometric/yellow.png',
             static: false
         )
-        pawn.target = [2, 2]
+        pawn.target = [10, 10]
+        puts "first pawn #{pawn.uid}"
+        
+        @world.add(pawn)
+
+        pawn = Pawn.new(
+            x: 15,
+            y: 15,
+            w: 32, 
+            h: 32, 
+            path: 'sprites/isometric/yellow.png',
+            static: false
+        )
+        pawn.target = [10, 10]
+        puts "second pawn #{pawn.uid}"
         
         @world.add(pawn)
 
@@ -47,8 +61,8 @@ class Game < View
             @world.add(Structure.new(
                 x: @cursor_pos.x, 
                 y: @cursor_pos.y, 
-                w: @world.dim, 
-                h: @world.dim, 
+                w: 32, 
+                h: 32, 
                 path: 'sprites/square/green.png',
                 primitive_marker: :sprite
             ))            

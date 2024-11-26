@@ -21,6 +21,7 @@ class World
         w.times() do |x|
             h.times() do |y|
                 @tiles[[x, y]] = {}
+
                 args.outputs[@static].primitives << {
                     x: x * @dim, 
                     y: y * @dim, 
@@ -42,35 +43,36 @@ class World
 
 
     def add(obj)
-        w_count = (obj.w / @dim).ceil() + 1
-        h_count = (obj.h / @dim).ceil() + 1
+        hit = []
+        w_count = (obj.w / @dim).floor() + 2
+        h_count = (obj.h / @dim).floor() + 2
         
         w_count.each() do |cur_w|
             h_count.each() do |cur_h|
-                x = obj.x + cur_w
-                y = obj.y + cur_h
+                x = (obj.x - 1 + cur_w).round
+                y = (obj.y - 1 + cur_h).round
 
                 next if(!@tiles.has_key?([x,y]))
 
                 if(@tiles.has_key?([x, y]) && !@tiles[[x, y]].has_key?(obj.type))
                     @tiles[[x, y]][obj.type] = {} 
                 end
-
-                puts "world -> adding #{[x, y]}"
+                 
                 @tiles[[x, y]][obj.type][obj.uid] = obj
+                hit << [x, y]
             end
         end
 
         @nonstatic[obj.uid] = obj if(!obj.static)
         @objs << obj
+
+        return hit
     end
 
 
     def delete(obj)
         w_count = (obj.w / @dim).ceil() + 1
         h_count = (obj.h / @dim).ceil() + 1
-        
-        puts "delete count #{[w_count, h_count]}"
         
         w_count.each() do |cur_w|
             h_count.each() do |cur_h|
@@ -80,8 +82,6 @@ class World
                 next if(!@tiles.has_key?([x,y]) || 
                         !@tiles[[x,y]].has_key?(obj.type))
 
-                puts "deleting #{[x, y]}"
-                
                 @tiles[[x, y]][obj.type].delete(obj.uid)
             end
         end
@@ -100,7 +100,6 @@ class World
         x = obj.x        
         y = obj.y 
         
-        puts "new pos #{[x, y]} old pos #{[old_position.x, old_position.y]}"
         return if(x == old_position.x && y == old_position.y)
 
         delete({
@@ -111,7 +110,7 @@ class World
             w: obj.w, 
             h: obj.h
         })
-        add(obj)
+        return add(obj)
     end
    
 
@@ -134,7 +133,17 @@ class World
         args.outputs[:update].h = @world_size.y
 
         args.outputs[:update].sprites << @objs.values.map() do |obj|
-            {
+            out = []
+            out << obj.col_list.map do |col|
+                {
+                    x: col.x * @dim, 
+                    y: col.y * @dim, 
+                    w: @dim, 
+                    h: @dim, 
+                    path: 'sprites/square/red.png'
+                }
+            end
+            out << {
                 x: obj.x * @dim,
                 y: obj.y * @dim,
                 w: obj.w,
@@ -142,6 +151,7 @@ class World
                 path: obj.path,
                 primitive_marker: :sprite
             }
+            out
         end
         _out << {
             x: 0, 
@@ -161,5 +171,10 @@ class World
 
     def screen_to_world(pos)
         pos = [(pos.x / @dim).floor(), (pos.y / @dim).floor()]
+    end
+
+
+    def collid?(obj)
+        
     end
 end

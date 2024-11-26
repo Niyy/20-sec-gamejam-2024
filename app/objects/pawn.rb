@@ -1,6 +1,6 @@
 class Pawn < DR_Object
     attr_accessor :path_start, :path_max_range, :task
-    attr_reader :target, :path_cur, :path_end, :path_start
+    attr_reader :target, :path_cur, :path_end, :path_start, :col_list
 
 
     def initialize(**argv)
@@ -13,6 +13,7 @@ class Pawn < DR_Object
 
         # Pathing
         clear_path()
+        @col_list = []
     end
 
 
@@ -112,10 +113,7 @@ class Pawn < DR_Object
             if(!@path_queue.empty?() && @path_found.nil?())
                 cur = @path_queue.pop()
 
-                puts "in_range #{in_range(cur, @target)}"
-
                 if(in_range(cur, @target) <= @path_max_range * @path_max_range)
-                    puts "found #{cur}"
                     _path_found = cur 
                     break
                 end
@@ -140,13 +138,11 @@ class Pawn < DR_Object
         end
 
         if(!_path_found.nil?())
-            puts 'found a path: creating final.'
             @path_cur.clear()
             @path_end = _path_found
             child = _path_found 
 
             while(@path_parents[child.uid].uid != child.uid)
-                puts "writing path -> adding #{child}"
                 @path_cur << child 
                 child = @path_parents[child.uid]
             end
@@ -165,7 +161,7 @@ class Pawn < DR_Object
             @y = @next_step.y
 
             @next_step = @path_cur.pop()
-            world.update(self, {x: @last_x, y: @last_y})
+            @col_list = world.update(self, {x: @last_x, y: @last_y})
         end
     end
 
@@ -174,14 +170,15 @@ class Pawn < DR_Object
         if(@next_step && @last_x && @last_y && @perc <= 1.0)
             @x = @last_x + ((@next_step.x - @last_x) * @perc)
             @y = @last_y + ((@next_step.y - @last_y) * @perc)
-            world.update(self, {x: @last_x, y: @last_y})
             @perc += 0.005
+            new_col_list = world.update(self, {x: @last_x, y: @last_y})
+            @col_list = new_col_list if(new_col_list)
         end
+
+
         
         if(@perc >= 1.0)
             if(@next_step)
-                puts "next step #{@next_step}"
-
                 @x = @next_step.x
                 @y = @next_step.y
             end
@@ -190,15 +187,17 @@ class Pawn < DR_Object
             @last_y = @y
             @next_step = @path_cur.pop()
             @perc = 0
-            world.update(self, {x: @last_x, y: @last_y})
+            added_col_tiles = world.update(
+                self, 
+                {x: @last_x, y: @last_y}, 
+                @col_list
+            )
         end
     end
 
 
     def assess(tiles, next_pos, original_tile, dir = [0, 0])
         if(dir.x != 0 && dir.y != 0)
-            puts "next_pos: #{next_pos}"
-            puts "original_tile: #{original_tile}"
             return (
                 tiles.has_key?(next_pos.uid) && 
                 (
@@ -232,6 +231,19 @@ class Pawn < DR_Object
             ) &&
             tiles[next_pos.uid][:pawn].nil?()
         )
+    end
+
+
+    def will_collide?(tiles)
+        has_collided? = false
+
+        @col_list.each() do |tile|
+            continue if(!tiles.has_key?(tile))
+
+            has_collided? = true if(tiles[tile].keys.length > 0)
+        end
+
+        return has_collided?
     end
 
 

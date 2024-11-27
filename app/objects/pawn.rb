@@ -234,13 +234,14 @@ class Pawn < DR_Object
     end
 
 
-    def will_collide?(tiles)
+    def will_collide?(tiles, next_col_list)
         has_collided? = false
 
-        @col_list.each() do |tile|
-            continue if(!tiles.has_key?(tile))
+        next_col_list.each() do |tile|
+            continue if()
 
-            has_collided? = true if(tiles[tile].keys.length > 0)
+            has_collided? = true if(!tiles.has_key?(tile) || 
+                tiles[tile].keys.length > 0)
         end
 
         return has_collided?

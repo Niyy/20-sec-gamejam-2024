@@ -12,7 +12,7 @@ class Game < View
         pawn = Pawn.new(
             w: 32, 
             h: 32, 
-            path: 'sprites/isometric/yellow.png',
+            path: 'sprites/circle/yellow.png',
             static: false
         )
         pawn.target = [10, 10]
@@ -25,7 +25,7 @@ class Game < View
             y: 15,
             w: 32, 
             h: 32, 
-            path: 'sprites/isometric/yellow.png',
+            path: 'sprites/circle/yellow.png',
             static: false
         )
         pawn.target = [10, 10]

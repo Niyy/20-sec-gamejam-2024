@@ -44,21 +44,17 @@ class World
 
     def add(obj)
         hit = []
-        w_count = (obj.w / @dim).floor() + 2
-        h_count = (obj.h / @dim).floor() + 2
-        
+        w_count = obj.w
+        h_count = obj.h
+
         w_count.each() do |cur_w|
             h_count.each() do |cur_h|
-                x = (obj.x - 1 + cur_w).round
-                y = (obj.y - 1 + cur_h).round
+                x = (obj.x.round + cur_w)
+                y = (obj.y.round + cur_h)
 
-                next if(!@tiles.has_key?([x,y]))
-
-                if(@tiles.has_key?([x, y]) && !@tiles[[x, y]].has_key?(obj.type))
-                    @tiles[[x, y]][obj.type] = {} 
-                end
+                next if(!@tiles[[x,y]])
                  
-                @tiles[[x, y]][obj.type][obj.uid] = obj
+                @tiles[[x, y]][obj.uid] = obj
                 hit << [x, y]
             end
         end
@@ -71,18 +67,18 @@ class World
 
 
     def delete(obj)
-        w_count = (obj.w / @dim).ceil() + 1
-        h_count = (obj.h / @dim).ceil() + 1
+        w_count = (obj.w).round()
+        h_count = (obj.h).round()
         
         w_count.each() do |cur_w|
             h_count.each() do |cur_h|
-                x = obj.x + cur_w
-                y = obj.y + cur_h
+                x = obj.x.round + cur_w
+                y = obj.y.round + cur_h
                 
                 next if(!@tiles.has_key?([x,y]) || 
                         !@tiles[[x,y]].has_key?(obj.type))
 
-                @tiles[[x, y]][obj.type].delete(obj.uid)
+                @tiles[[x, y]].delete(obj.uid)
             end
         end
 
@@ -108,18 +104,15 @@ class World
             x: old_position.x, 
             y: old_position.y, 
             w: obj.w, 
-            h: obj.h
+            h: obj.h,
+            z: obj.z
         })
         return add(obj)
     end
    
 
     def render(args, screen_offset)
-        _internal_out = [
-            [], # ground render lvl
-            [], # debug pawn lvl
-            []  # pawn lvl
-        ]
+        _world_out = []
         _out = []
 
         _out << {
@@ -137,27 +130,19 @@ class World
         args.outputs[:update].w = @world_size.x 
         args.outputs[:update].h = @world_size.y
 
-        @objs.values.each() do |obj|
-            _internal_out[1] << obj.col_list.map do |col|
-                {
-                    x: col.x * @dim, 
-                    y: col.y * @dim, 
-                    w: @dim, 
-                    h: @dim, 
-                    path: 'sprites/square/red.png'
+        @objs.values.each do |level|
+            level.values.each do |obj|
+                _world_out << {
+                    x: obj.x * @dim,
+                    y: obj.y * @dim,
+                    w: obj.h * @dim,
+                    h: obj.w * @dim,
+                    path: obj.path
                 }
             end
-            _internal_out[2] << {
-                x: obj.x * @dim,
-                y: obj.y * @dim,
-                w: obj.w,
-                h: obj.h,
-                path: obj.path,
-                primitive_marker: :sprite
-            }
         end
 
-        args.outputs[:update].sprites << _internal_out
+        args.outputs[:update].sprites << _world_out
 
         _out << {
             x: 0, 
@@ -180,7 +165,22 @@ class World
     end
 
 
-    def collid?(obj)
-        
+    def check_collisions(pos, w, h)
+        _collisions = []
+
+        w.each() do |_cur_w|
+            h.each() do |_cur_h|
+                _x = pos.x.round + _cur_w
+                _y = pos.y.round + _cur_h
+
+                if(@tiles[[_x, _y]] && @tiles[[_x, _y]].values.length > 0)
+                    _collisions << @tiles[[_x, _y]].values
+                elsif(!@tiles[[_x, _y]])
+                    _collisions << nil 
+                end
+            end
+        end       
+
+        return _collisions
     end
 end

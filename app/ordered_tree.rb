@@ -4,28 +4,22 @@ class Ordered_Tree
 
     def initialize(branches: {})
         @branches = []
-        @named_lookup = {}
-
-        branches.values().each() do |branch|
-            push(branch)
-        end
+        @index = {}
     end
 
 
-    def [](key)
-        return nil if(!@named_lookup.has_key?(key))
-
-        return @branches[@named_lookup[key]] 
+    def [](uid)
+        return @index[uid]
     end
 
 
-    def []=(key, value)
-        @branches[@named_lookup[key]] = value
+    def []=(uid, value)
+        return @index[uid] = value
     end
 
 
     def <<(branch)
-        if(@named_lookup.has_key?(branch.uid))
+        if(@branches[branch.z] && @branches[branch.z][branch.uid])
             delete(branch)
         end
 
@@ -34,35 +28,29 @@ class Ordered_Tree
 
 
     def insert(branch)
-        where = @branches.bsearch_index do |element| 
-            branch.z >= element.z 
+        throw "BRANCH_OUT_OF_BOUNDS::#{branch.z}" if(branch.z < 0)
+
+        if((branch.z + 1) > @branches.length)
+            add_branch(branch.z + 1)
         end
        
-        if(!where)
-            @branches << branch 
-            @named_lookup[branch.uid] = @branches.length - 1 
-        else
-            @branches.insert(where, branch)
-            @named_lookup[branch.uid] = where
-        end
+        @branches[branch.z][branch.uid] = branch 
+        @index[branch.uid] = branch
+    end
+
+
+    def <<(branch)
+        insert(branch)
     end
 
 
     def delete(branch)
-        return nil if(!@named_lookup.has_key?(branch.uid))
+        return nil if(!@branches[branch.z] || !@branches[branch.z][branch.uid])
 
-        if(
-            @named_lookup[branch.uid] >= @branches.length
-        )
-            return @named_lookup.delete(branch.uid)
-        end
+        @branches[branch.z].delete(branch.uid)
+        @index.delete(branch.uid)
 
-        where = @named_lookup[branch.uid]
-
-        pop_val = @branches.delete_at(where)
-        deleted_val = @named_lookup.delete(pop_val.uid)
-
-        return pop_val
+        return branch 
     end
 
 
@@ -82,5 +70,20 @@ class Ordered_Tree
 
     def empty?()
         return @branches.empty?()
+    end
+
+
+    def add_branch(desired_branch)
+        branch_diff = desired_branch - @branches.length
+
+        puts "branch diff #{branch_diff}"
+
+        if(branch_diff > 0)
+            branch_diff.times() do |x|
+                @branches << {} 
+            end
+        end
+
+        puts "branches #{@branches}"
     end
 end

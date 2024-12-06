@@ -4,14 +4,14 @@ class Game < View
 
     def initialize(args)
         self.args = args
-        puts 'hello my good sir.'
         @screen_offset = [0, 0]
         @world = World.new(args, @screen_offset, w: 40, h: 40, dim: 8)
         @cursor_pos = [0, 0]
 
         pawn = Pawn.new(
-            w: 8, 
-            h: 8, 
+            w: 1, 
+            h: 1,
+            z: 0,
             path: 'sprites/circle/yellow.png',
             static: false
         )
@@ -19,19 +19,20 @@ class Game < View
         puts "first pawn #{pawn.uid}"
         
         @world.add(pawn)
-
-        pawn = Pawn.new(
-            x: 15,
-            y: 15,
-            w: 8, 
-            h: 8, 
-            path: 'sprites/circle/yellow.png',
-            static: false
-        )
-        pawn.target([10, 10])
-        puts "second pawn #{pawn.uid}"
-        
-        @world.add(pawn)
+#
+#        pawn = Pawn.new(
+#            x: 15,
+#            y: 15,
+#            w: 1, 
+#            h: 1, 
+#            z: 0,
+#            path: 'sprites/circle/yellow.png',
+#            static: false
+#        )
+#        pawn.target([10, 10])
+#        puts "second pawn #{pawn.uid}"
+#        
+#        @world.add(pawn)
 
         puts 'world loaded'
     end
@@ -47,22 +48,29 @@ class Game < View
 
 
     def input()
-        mouse_pos = [inputs.mouse.x, inputs.mouse.y]
-        mouse_pos.x += @screen_offset.x
-        mouse_pos.y += @screen_offset.y
-        @cursor_pos = @world.screen_to_world(mouse_pos)
+        _collisions_mouse = []
+        _mouse_pos = [inputs.mouse.x, inputs.mouse.y]
+        _mouse_pos.x += @screen_offset.x
+        _mouse_pos.y += @screen_offset.y
+        @cursor_pos = @world.screen_to_world(_mouse_pos)
+
+        _collisions_mouse = @world.check_collisions(@cursor_pos, 2, 2)
 
         if(inputs.mouse.click)
-            puts "screen #{[inputs.mouse.x, inputs.mouse.y]}, pos #{@cursor_pos}"
+            puts "on tile: #{_collisions_mouse} length #{_collisions_mouse.length}"
         end
 
+        if(
+            inputs.mouse.button_left && 
+            @world.tiles[@cursor_pos] &&
+            _collisions_mouse.length <= 0
 
-        if(inputs.mouse.button_left && @world.valid_add(@cursor_pos) && @world.collid?)
+        )
             @world.add(Structure.new(
                 x: @cursor_pos.x, 
                 y: @cursor_pos.y, 
-                w: 32, 
-                h: 32, 
+                w: 2, 
+                h: 2, 
                 path: 'sprites/square/green.png',
                 primitive_marker: :sprite
             ))            

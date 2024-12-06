@@ -81,12 +81,10 @@ class DR_Object
 
     def set_x(val)
         @x = val 
-        @z = (@x * @x) + (@y * @y)
     end
 
 
     def set_y(val)
         @y = val
-        @z = (@x * @x) + (@y * @y)
     end
 end

@@ -1,5 +1,5 @@
 class Pawn < DR_Object
-    attr_accessor :path_start, :path_max_range, :task
+    attr_accessor :path_start, :path_max_range, :task, :dim
     attr_reader :path_cur, :path_end, :path_start, :col_list, :perc,
                 :next_step, :last_x, :last_y
 
@@ -19,7 +19,7 @@ class Pawn < DR_Object
 
 
     def update(tick_count, world)
-        create_path(world.tiles)
+        create_path(world, world.tiles)
         move_lerp(tick_count, world)
     end
 
@@ -45,32 +45,30 @@ class Pawn < DR_Object
     end
 
 
-    def path_queue_add(tiles, cur, dif, trail_end = {x: -1, y: -1}, queue = [], 
+    def path_queue_add(world, tiles, cur, dif, trail_end = {x: -1, y: -1}, queue = [], 
         parents = {}
     )
-        next_step = {
+        _next_step = {
             x: cur.x + dif.x, 
             y: cur.y + dif.y, 
             uid: [cur.x + dif.x, cur.y + dif.y]
         }
-        step_dist = sqr(trail_end.x - next_step.x) + 
-            sqr(trail_end.y - next_step.y) 
+        _step_dist = sqr(trail_end.x - _next_step.x) + 
+            sqr(trail_end.y - _next_step.y) 
+        _collisions = world.check_collisions(_next_step, @w, @h)
         
         if(
-            tiles.has_key?([next_step.x, next_step.y]) &&
-            !parents.has_key?(next_step.uid) && 
-            (
-                assess(tiles, next_step, cur, dif)# || 
-#                combat_assess(tiles, next_step, cur, dif) || 
-#                (
-#                    trail_end.x == cur.x &&
-#                    trail_end.y == cur.y
-#                )
-            )
+            tiles.has_key?([_next_step.x, _next_step.y]) &&
+            !parents.has_key?(_next_step.uid) && 
+            _collisions.length <= 0 #&&
+#            (
+#                !_collisions[0] || 
+#                _collisions[0].uid == @uid
+#            )
         )
-            queue << next_step.merge({z: step_dist}) 
-            parents[next_step.uid] = cur 
-            return next_step
+            queue << _next_step.merge({z: _step_dist}) 
+            parents[_next_step.uid] = cur 
+            return _next_step
         end
     end
 
@@ -112,7 +110,7 @@ class Pawn < DR_Object
 
 
 
-    def create_path(tiles)
+    def create_path(world, tiles)
     # For a new path to be created the clear_path func should be called and then
     # you need to assign the target variable. target(new_target)
     # should automate this.
@@ -132,21 +130,21 @@ class Pawn < DR_Object
                     break
                 end
                 
-                path_queue_add(tiles, cur, [0, 1], @target, @path_queue, 
+                path_queue_add(world, tiles, cur, [0, 1], @target, @path_queue, 
                                @path_parents)
-                path_queue_add(tiles, cur, [0, -1], @target, @path_queue, 
+                path_queue_add(world, tiles, cur, [0, -1], @target, @path_queue, 
                                @path_parents)
-                path_queue_add(tiles, cur, [1, 0], @target, @path_queue, 
+                path_queue_add(world, tiles, cur, [1, 0], @target, @path_queue, 
                                @path_parents)
-                path_queue_add(tiles, cur, [-1, 0], @target, @path_queue, 
+                path_queue_add(world, tiles, cur, [-1, 0], @target, @path_queue, 
                                @path_parents)
-                path_queue_add(tiles, cur, [1, 1], @target, @path_queue, 
+                path_queue_add(world, tiles, cur, [1, 1], @target, @path_queue, 
                                @path_parents)
-                path_queue_add(tiles, cur, [1, -1], @target, @path_queue, 
+                path_queue_add(world, tiles, cur, [1, -1], @target, @path_queue, 
                                @path_parents)
-                path_queue_add(tiles, cur, [-1, 1], @target, @path_queue, 
+                path_queue_add(world, tiles, cur, [-1, 1], @target, @path_queue, 
                                @path_parents)
-                path_queue_add(tiles, cur, [-1, -1], @target, @path_queue, 
+                path_queue_add(world, tiles, cur, [-1, -1], @target, @path_queue, 
                                @path_parents)
             end
         end
@@ -220,7 +218,7 @@ class Pawn < DR_Object
             @perc = 0
             @col = world.update(
                 self, 
-                {x: @last_x, y: @last_y},
+                {x: @last_x, y: @last_y, uid: @uid, z: @uid},
             )
         end
     end
@@ -228,38 +226,9 @@ class Pawn < DR_Object
 
     def assess(tiles, next_pos, original_tile, dir = [0, 0])
         if(dir.x != 0 && dir.y != 0)
-            return (
-                tiles.has_key?(next_pos.uid) && 
-                (
-                    !tiles[next_pos.uid][:structure] ||
-                    tiles[next_pos.uid][:structure].values.length == 0 || 
-                    tiles[next_pos.uid][:structure].values[0].passable 
-                ) &&
-                (
-                    tiles.has_key?([next_pos.x, original_tile.y]) && 
-                    (
-                        !tiles[[next_pos.x, original_tile.y]][:structure] ||
-                        tiles[[next_pos.x, original_tile.y]][:structure].values.length == 0 ||
-                        tiles[[next_pos.x, original_tile.y]][:structure].values[0].passable 
-                    ) || 
-                    tiles.has_key?([original_tile.x, next_pos.y]) && 
-                    (
-                        !tiles[[original_tile.x, next_pos.y]][:structure] ||
-                        tiles[[original_tile.x, next_pos.y]][:structure].values.length == 0 ||
-                        tiles[[original_tile.x, next_pos.y]][:structure].values[0].passable 
-                    ) 
-                )
-            )
         end
         
-        return (
-            tiles.has_key?(next_pos.uid) && 
-            (
-                !tiles[next_pos.uid][:structure] || 
-                tiles[next_pos.uid][:structure].values.length == 0 ||
-                tiles[next_pos.uid][:structure].values[0].passable 
-            )
-        )
+        return 
     end
 
 

@@ -10,12 +10,12 @@ class Game < View
         @cursor_pos = [0, 0]
 
         pawn = Pawn.new(
-            w: 32, 
-            h: 32, 
+            w: 8, 
+            h: 8, 
             path: 'sprites/circle/yellow.png',
             static: false
         )
-        pawn.target = [10, 10]
+        pawn.target([10, 10])
         puts "first pawn #{pawn.uid}"
         
         @world.add(pawn)
@@ -23,12 +23,12 @@ class Game < View
         pawn = Pawn.new(
             x: 15,
             y: 15,
-            w: 32, 
-            h: 32, 
+            w: 8, 
+            h: 8, 
             path: 'sprites/circle/yellow.png',
             static: false
         )
-        pawn.target = [10, 10]
+        pawn.target([10, 10])
         puts "second pawn #{pawn.uid}"
         
         @world.add(pawn)

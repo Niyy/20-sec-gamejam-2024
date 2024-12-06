@@ -1,13 +1,14 @@
 class Pawn < DR_Object
     attr_accessor :path_start, :path_max_range, :task
-    attr_reader :target, :path_cur, :path_end, :path_start, :col_list
+    attr_reader :path_cur, :path_end, :path_start, :col_list, :perc,
+                :next_step, :last_x, :last_y
 
 
     def initialize(**argv)
         super
         
         @task = nil
-        @speed = 60
+        @speed = 0.014
         @perc = 2.0
         @faction = argv.faction
 
@@ -20,6 +21,16 @@ class Pawn < DR_Object
     def update(tick_count, world)
         create_path(world.tiles)
         move_lerp(tick_count, world)
+    end
+
+
+    def target(new_target = nil)
+        return @target if(!new_target)
+
+        clear_path()
+        @path_queue << {x: @x.round(), y: @y.round(), z: 0, uid: [@x, @y]}
+        @path_parents[[@x, @y]] = {x: @x, y: @y, z: 0, uid: [@x, @y]}
+        @target = new_target
     end
 
 
@@ -102,12 +113,15 @@ class Pawn < DR_Object
 
 
     def create_path(tiles)
+    # For a new path to be created the clear_path func should be called and then
+    # you need to assign the target variable. target(new_target)
+    # should automate this.
         return if(@path_end || @target.nil?())
 
         _path_found = nil
-
-        @path_queue << {x: @x, y: @y, z: 0, uid: [@x, @y]} 
-        @path_parents[[@x, @y]] = {x: @x, y: @y, z: 0, uid: [@x, @y]}
+        
+#        @path_queue << {x: @x, y: @y, z: 0, uid: [@x, @y]} 
+        
         
         15.times() do |i|
             if(!@path_queue.empty?() && @path_found.nil?())
@@ -148,6 +162,9 @@ class Pawn < DR_Object
             end
 
             @next_step = @path_cur.pop()
+            @last_x = @x
+            @last_y = @y
+            @perc = 0
             return
         end
     end
@@ -180,11 +197,14 @@ class Pawn < DR_Object
             uid: @uid
         }
 
-        return if(world.check_collision(next_state, @col_list))
+        @x = @last_x + ((@next_step.x - @last_x) * @perc)
+        @y = @last_y + ((@next_step.y - @last_y) * @perc)
+
+        #return if(world.check_collision(next_state, @col_list))
 
         if(@perc <= 1.0)
-            @perc += 0.005
-            new_col_list = world.update(next_state, {x: @last_x, y: @last_y})
+            @perc += @speed
+            new_col_list = world.update(self, {x: @last_x, y: @last_y})
             @col_list = new_col_list if(new_col_list)
         end
 
@@ -238,23 +258,22 @@ class Pawn < DR_Object
                 !tiles[next_pos.uid][:structure] || 
                 tiles[next_pos.uid][:structure].values.length == 0 ||
                 tiles[next_pos.uid][:structure].values[0].passable 
-            ) &&
-            tiles[next_pos.uid][:pawn].nil?()
+            )
         )
     end
 
 
     def will_collide?(tiles, next_col_list)
-        has_collided? = false
+        has_collided = false
 
         next_col_list.each() do |tile|
             continue if()
 
-            has_collided? = true if(!tiles.has_key?(tile) || 
+            has_collided = true if(!tiles.has_key?(tile) || 
                 tiles[tile].keys.length > 0)
         end
 
-        return has_collided?
+        return has_collided
     end
 
 

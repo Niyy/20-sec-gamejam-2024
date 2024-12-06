@@ -115,6 +115,11 @@ class World
    
 
     def render(args, screen_offset)
+        _internal_out = [
+            [], # ground render lvl
+            [], # debug pawn lvl
+            []  # pawn lvl
+        ]
         _out = []
 
         _out << {
@@ -132,9 +137,8 @@ class World
         args.outputs[:update].w = @world_size.x 
         args.outputs[:update].h = @world_size.y
 
-        args.outputs[:update].sprites << @objs.values.map() do |obj|
-            out = []
-            out << obj.col_list.map do |col|
+        @objs.values.each() do |obj|
+            _internal_out[1] << obj.col_list.map do |col|
                 {
                     x: col.x * @dim, 
                     y: col.y * @dim, 
@@ -143,7 +147,7 @@ class World
                     path: 'sprites/square/red.png'
                 }
             end
-            out << {
+            _internal_out[2] << {
                 x: obj.x * @dim,
                 y: obj.y * @dim,
                 w: obj.w,
@@ -151,8 +155,10 @@ class World
                 path: obj.path,
                 primitive_marker: :sprite
             }
-            out
         end
+
+        args.outputs[:update].sprites << _internal_out
+
         _out << {
             x: 0, 
             y: 0, 

@@ -198,8 +198,6 @@ class Pawn < DR_Object
         @x = @last_x + ((@next_step.x - @last_x) * @perc)
         @y = @last_y + ((@next_step.y - @last_y) * @perc)
 
-        #return if(world.check_collision(next_state, @col_list))
-
         if(@perc <= 1.0)
             @perc += @speed
             new_col_list = world.update(self, {x: @last_x, y: @last_y})
@@ -215,11 +213,20 @@ class Pawn < DR_Object
             @last_x = @x
             @last_y = @y
             @next_step = @path_cur.pop()
-            @perc = 0
+            @perc = 1.0 - @perc
             @col = world.update(
                 self, 
-                {x: @last_x, y: @last_y, uid: @uid, z: @uid},
+                {x: @last_x, y: @last_y, uid: @uid, z: @uid}
             )
+
+            if(@next_step)
+
+                _collisions = world.check_collisions(@next_step, @w, @h)
+
+                if(@target && _collisions.length > 0)
+                    target(@target)
+                end
+            end
         end
     end
 
@@ -229,20 +236,6 @@ class Pawn < DR_Object
         end
         
         return 
-    end
-
-
-    def will_collide?(tiles, next_col_list)
-        has_collided = false
-
-        next_col_list.each() do |tile|
-            continue if()
-
-            has_collided = true if(!tiles.has_key?(tile) || 
-                tiles[tile].keys.length > 0)
-        end
-
-        return has_collided
     end
 
 

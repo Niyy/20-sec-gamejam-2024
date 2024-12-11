@@ -5,7 +5,7 @@ class Game < View
     def initialize(args)
         self.args = args
         @screen_offset = [0, 0]
-        @world = World.new(args, @screen_offset, w: 40, h: 40, dim: 8)
+        @world = World.new(args, @screen_offset, w: 40, h: 40, dim: 16)
         @cursor_pos = [0, 0]
 
         pawn = Pawn.new(
@@ -73,6 +73,7 @@ class Game < View
                 h: 2, 
                 path: 'sprites/square/green.png',
                 primitive_marker: :sprite
+#                tags: {indestructable: 1}
             ))            
         end
 

@@ -75,8 +75,7 @@ class World
                 x = obj.x.round + cur_w
                 y = obj.y.round + cur_h
                 
-                next if(!@tiles.has_key?([x,y]) || 
-                        !@tiles[[x,y]].has_key?(obj.type))
+                next if(!@tiles[[x,y]])
 
                 @tiles[[x, y]].delete(obj.uid)
             end

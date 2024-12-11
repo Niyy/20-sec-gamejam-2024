@@ -11,6 +11,9 @@ class Pawn < DR_Object
         @speed = 0.014
         @perc = 2.0
         @faction = argv.faction
+        @state = :idle
+        @fighting = nil
+        @phys_defence = 0
 
         # Pathing
         clear_path()
@@ -19,8 +22,8 @@ class Pawn < DR_Object
 
 
     def update(tick_count, world)
-        create_path(world, world.tiles)
-        move_lerp(tick_count, world)
+        create_path(world, world.tiles) if(@state == :create_path)
+        move(tick_count, world) if(@state == :move)
     end
 
 
@@ -31,6 +34,8 @@ class Pawn < DR_Object
         @path_queue << {x: @x.round(), y: @y.round(), z: 0, uid: [@x, @y]}
         @path_parents[[@x, @y]] = {x: @x, y: @y, z: 0, uid: [@x, @y]}
         @target = new_target
+
+        @state = :create_path
     end
 
 
@@ -42,6 +47,9 @@ class Pawn < DR_Object
         @path_queue = Min_Tree.new()
         @path_cur = []
         @last_position = [@x, @y]
+        @next_step = nil
+
+        @state = :idle
     end
 
 
@@ -163,25 +171,13 @@ class Pawn < DR_Object
             @last_x = @x
             @last_y = @y
             @perc = 0
+            @state = :move
             return
         end
     end
 
 
     def move(tick_count, world)
-        if(@next_step && @next_step && tick_count % @speed == 0)
-            @last_x = @x
-            @last_y = @y
-            @x = @next_step.x
-            @y = @next_step.y
-
-            @next_step = @path_cur.pop()
-            @col_list = world.update(self, {x: @last_x, y: @last_y})
-        end
-    end
-
-
-    def move_lerp(tick_count, world)
         next_state = {}
 
         return if(!(@next_step && @last_x && @last_y))
@@ -200,7 +196,11 @@ class Pawn < DR_Object
 
         if(@perc <= 1.0)
             @perc += @speed
-            new_col_list = world.update(self, {x: @last_x, y: @last_y})
+
+            new_col_list = world.update(
+                self, 
+                {x: @last_x, y: @last_y, uid: @uid, z: @uid}
+            )
             @col_list = new_col_list if(new_col_list)
         end
 
@@ -210,8 +210,8 @@ class Pawn < DR_Object
                 next_state.y = @next_step.y
             end
 
-            @last_x = @x
-            @last_y = @y
+            @last_x = @next_step.x
+            @last_y = @next_step.y 
             @next_step = @path_cur.pop()
             @perc = 1.0 - @perc
             @col = world.update(
@@ -222,55 +222,17 @@ class Pawn < DR_Object
             if(@next_step)
 
                 _collisions = world.check_collisions(@next_step, @w, @h)
+                
+                if(_collisions.length > 0)
+                   _nxt_fight = pick_fight(_collisions)
 
-                if(@target && _collisions.length > 0)
+                   @fighting = _nxt_fight.target if(_nxt_fight)
+                   target(@target) if(!_nxt_fight)
+                elsif(@target && _collisions.length > 0)
                     target(@target)
                 end
             end
         end
-    end
-
-
-    def assess(tiles, next_pos, original_tile, dir = [0, 0])
-        if(dir.x != 0 && dir.y != 0)
-        end
-        
-        return 
-    end
-
-
-    def combat_assess(tiles, next_pos, og, dir = [0, 0])
-        if(dir.x != 0 && dir.y != 0)
-            return (
-                tiles.has_key?(next_pos.uid) && 
-                tiles[next_pos.uid][:ground].nil?() &&
-                tiles[next_pos.uid][:pawn].nil?() &&
-                tiles.has_key?([next_pos.x, og.y]) && 
-                tiles[[next_pos.x, og.y]][:ground].nil?() && 
-                tiles[[next_pos.x, og.y]][:pawn].nil?() && 
-                tiles.has_key?([og.x, next_pos.y]) && 
-                tiles[[og.x, next_pos.y]][:ground].nil?() &&
-                tiles[[og.x, next_pos.y]][:pawn].nil?()
-            )
-        end
-
-        return (
-            (
-                tiles[next_pos.uid] &&
-                tiles[next_pos.uid][:ground] &&
-                @enemies.has_key?(tiles[next_pos.uid][:ground].
-                                                       faction.
-                                                       to_s.
-                                                       to_sym) 
-            ) || (
-                tiles[next_pos.uid] &&
-                tiles[next_pos.uid][:pawn] &&
-                @enemies.has_key?(tiles[next_pos.uid][:pawn].
-                                                       faction.
-                                                       to_s.
-                                                       to_sym)
-            )
-        )
     end
 
 
@@ -342,5 +304,27 @@ class Pawn < DR_Object
             primitive_marker: @primitive_marker,
             type: @type
         )
+    end
+
+
+    def fight(world, tick_count)
+         
+    end
+
+
+    def pick_fight(_collisions)
+        _fight_priority = Min_Tree.new()
+        
+        _collisions.each() do |_obj|
+            _priority = 100
+
+            next if(_obj.tag[:indestructable])
+
+            _priority -= 50 if(_obj.type == :pawn)
+
+            _fight_priority << {target: _obj, z: _priority}
+        end
+
+        return _fight_priority.pop() 
     end
 end

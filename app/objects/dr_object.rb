@@ -6,7 +6,8 @@ class DR_Object
 
 
     def initialize(x: 0, y: 0, z: 0, w: 1, h: 1, r: 0, g: 0, b: 0, path: 'sprites/circle/white.rb', 
-        faction: -1, primitive_marker: :solid, type: :dr_object, static: true
+        faction: -1, primitive_marker: :solid, type: :dr_object, static: true,
+        tags: {}
     )
         @x = 0
         @y = 0
@@ -25,6 +26,7 @@ class DR_Object
         @faction = faction
         @path = path
         @static = static
+        @tags = tags 
     end
 
 
